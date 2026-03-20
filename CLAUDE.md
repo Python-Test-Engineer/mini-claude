@@ -8,11 +8,35 @@ This is an early-stage project to build a minimal Claude Code implementation. Se
 
 ## Current State
 
-The project has no source code yet — only the goal document (`PROMPT.md`). There are no build tools, dependencies, or directory structure in place.
+The project is implemented as a single file: `mini_claude.py`.
 
-## Getting Started
+## Setup & Run
 
-When development begins, update this file with:
-- Language/runtime and how to install dependencies
-- Build, lint, and test commands
-- Architecture overview once the structure is established
+```bash
+# Install dependencies (creates .venv automatically)
+uv add anthropic
+
+# Set API key (Windows)
+set ANTHROPIC_API_KEY=sk-ant-...
+
+# Run
+uv run mini_claude.py
+```
+
+## Architecture
+
+Single file (`mini_claude.py`), no package structure.
+
+**Tools available to the agent:**
+- `read_file` — read file contents
+- `write_file` — create or overwrite a file
+- `edit_file` — replace first occurrence of a string in a file
+- `bash` — run a shell command, returns stdout + stderr
+- `list_files` — list directory contents
+
+**Agentic loop:**
+- Outer loop: waits for user input each turn
+- Inner loop: re-calls the API after each tool batch until `stop_reason == "end_turn"`
+- Conversation history is kept in-memory for the session
+
+**UI:** Two green `─` separator lines above and below the `You:` prompt. Tool calls printed in yellow, Claude's replies in cyan.

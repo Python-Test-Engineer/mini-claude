@@ -1,0 +1,1 @@
+Print a colorful ASCII art version of the word HELLO using ANSI color codes directly in the terminal. Use large block letters made of # characters, with each letter in a different bright color (red, yellow, green, cyan, magenta). Output only the ASCII art, no extra explanation.
