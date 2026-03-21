@@ -312,7 +312,7 @@ def run_agent_loop(client):
             # Print text blocks
             for block in response.content:
                 if block.type == "text":
-                    print(f"\n{CYAN}Claude:{RESET} {block.text}\n")
+                    print(f"\n{CYAN}Mini Claude:{RESET} {block.text}\n")
 
             if response.stop_reason == "end_turn":
                 break
