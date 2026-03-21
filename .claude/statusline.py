@@ -23,8 +23,10 @@ import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+
 try:
     from dotenv import load_dotenv
+
     load_dotenv(Path.home() / ".claude" / ".env")  # global Claude config
     load_dotenv()  # project-level .env (can override global)
 except ImportError:
@@ -46,6 +48,8 @@ SESSION_HOURS = 5
 # Limits — override via env vars
 DEFAULT_SESSION_LIMIT = int(os.environ.get("CLAUDE_SESSION_LIMIT", "40000000"))
 DEFAULT_WEEKLY_LIMIT = int(os.environ.get("CLAUDE_WEEKLY_LIMIT", "10000000"))
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -71,6 +75,8 @@ def get_session_start_time(session_id):
     except Exception:
         pass
     return start_time
+
+
 def format_elapsed(start_time):
     total_s = int((datetime.now() - start_time).total_seconds())
     if total_s < 60:
@@ -79,6 +85,8 @@ def format_elapsed(start_time):
         return f"{total_s // 60}m {total_s % 60}s"
     else:
         return f"{total_s // 3600}h {(total_s % 3600) // 60}m"
+
+
 def duration_color(start_time):
     mins = (datetime.now() - start_time).total_seconds() / 60
     if mins < 30:
@@ -88,18 +96,24 @@ def duration_color(start_time):
     if mins < 120:
         return MAGENTA
     return RED
+
+
 def fmt_tokens(n):
     if n >= 1_000_000:
         return f"{n/1_000_000:.1f}M"
     if n >= 1_000:
         return f"{n/1_000:.1f}k"
     return str(n)
+
+
 def pct_color(pct):
     if pct < 50:
         return GREEN
     if pct < 80:
         return YELLOW
     return RED
+
+
 def make_dot_bar(filled, total=10):
     filled = max(0, min(total, int(filled)))
     try:
@@ -108,6 +122,8 @@ def make_dot_bar(filled, total=10):
         return bar
     except (UnicodeEncodeError, LookupError):
         return "#" * filled + "-" * (total - filled)
+
+
 def get_git_branch():
     try:
         r = subprocess.run(
@@ -121,6 +137,8 @@ def get_git_branch():
     except Exception:
         pass
     return None
+
+
 def get_cost(input_data):
     u = input_data.get("usage", {})
     cost = u.get("cost_usd", u.get("costUSD", None))
@@ -134,6 +152,8 @@ def get_cost(input_data):
         except Exception:
             pass
     return cost
+
+
 # ---------------------------------------------------------------------------
 # Session window token counting (last 5 hours from project JSONL files)
 # ---------------------------------------------------------------------------
@@ -192,6 +212,8 @@ def _tail_tokens_from_file(filepath: Path, cutoff_ts: str) -> int:
     except Exception:
         pass
     return tokens
+
+
 def get_session_stats():
     now = datetime.now()
     cutoff = now - timedelta(hours=SESSION_HOURS)
@@ -226,6 +248,8 @@ def get_session_stats():
     else:
         time_str = f"~{remaining_m}m"
     return pct, total_tokens, limit, time_str
+
+
 # ---------------------------------------------------------------------------
 # Weekly stats (from stats-cache.json)
 # ---------------------------------------------------------------------------
@@ -250,7 +274,9 @@ def get_weekly_stats():
     limit = DEFAULT_WEEKLY_LIMIT
     pct = min(100.0, weekly_tokens / limit * 100) if limit > 0 else 0.0
     days_to_monday = (7 - today.weekday()) % 7 or 7
-    next_monday = datetime.combine(today + timedelta(days=days_to_monday), datetime.min.time())
+    next_monday = datetime.combine(
+        today + timedelta(days=days_to_monday), datetime.min.time()
+    )
     remaining_s = (next_monday - now).total_seconds()
     remaining_h = int(remaining_s // 3600)
     remaining_d = remaining_h // 24
@@ -260,24 +286,35 @@ def get_weekly_stats():
     else:
         reset = f"{remaining_h_part}h"
     return pct, weekly_tokens, limit, reset
+
+
 def get_last_prompt(session_id: str, max_len: int = 80) -> str:
     try:
         prompt_file = Path.home() / ".claude" / f"last_prompt_{session_id}.txt"
         if not prompt_file.exists():
             return ""
-        text = prompt_file.read_text(encoding="utf-8").replace("\r\n", " ").replace("\n", " ").strip()
+        text = (
+            prompt_file.read_text(encoding="utf-8")
+            .replace("\r\n", " ")
+            .replace("\n", " ")
+            .strip()
+        )
         if not text:
             return ""
-        return text[:max_len - 1] + "…" if len(text) > max_len else text
+        return text[: max_len - 1] + "…" if len(text) > max_len else text
     except Exception:
         return ""
+
+
 def usage_row(label, dot_bar, pct, col, recycle_label):
     return (
         f"{DIM}{label:<8}{RESET}"
         f"{DIM}{dot_bar}{RESET}  "
-        f"{col}{pct:.0f}%{RESET}  "
+        f"{col}{int(pct):>2d}%{RESET}  "
         f"{DIM}{RECYCLE}{RESET} {recycle_label}"
     )
+
+
 # ---------------------------------------------------------------------------
 # Main status generator
 # ---------------------------------------------------------------------------
@@ -341,8 +378,14 @@ def generate_status_line(input_data):
         weekly_col,
         f"Time left: {weekly_col}{week_reset}{RESET}  {DIM}{fmt_tokens(weekly_tok)}/{fmt_tokens(weekly_limit)}{RESET}",
     )
-    lines = [f"{MAGENTA}▶{RESET} {DIM}{last_prompt}{RESET}", line1, line2, line3] if last_prompt else [line1, line2, line3]
+    lines = (
+        [f"{MAGENTA}▶{RESET} {DIM}{last_prompt}{RESET}", line1, line2, line3]
+        if last_prompt
+        else [line1, line2, line3]
+    )
     return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
@@ -362,5 +405,7 @@ def main():
     except Exception as e:
         print(f"{RED}[Claude] Error: {e}{RESET}")
         sys.exit(0)
+
+
 if __name__ == "__main__":
     main()
