@@ -2,5 +2,17 @@
   "statusLine": {
     "type": "command",
     "command": "uv run .claude/statusline.py"
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -c \"(New-Object Media.SoundPlayer 'C:\\Windows\\Media\\chimes.wav').PlaySync()\""
+          }
+        ]
+      }
+    ]
   }
 }

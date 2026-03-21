@@ -297,6 +297,59 @@ Here is the full data flow for a single request:
 
 ---
 
+## Step 8 — Project Folders
+
+The project uses two folders as a sandbox for the agent to work in:
+
+```
+mini-claude/
+├── mini_claude.py          ← the agent itself
+├── slash_commands/         ← reusable prompt templates
+├── data/                   ← input data the agent can read and analyse
+│   ├── sales.csv           ← example dataset
+│   ├── analyze_sales.py    ← script the agent wrote
+│   └── sales_report.md     ← report the agent produced
+└── output/                 ← files the agent writes as final deliverables
+    ├── list_files.sh
+    └── list_files.txt
+```
+
+### `data/` — inputs and working files
+
+The `data/` folder holds source material you give the agent to work with — CSVs, raw text files, datasets. The agent can use `read_file` and `list_files` to explore it, and `write_file` or `bash` to generate derived files (scripts, reports) alongside the originals.
+
+Think of it as the agent's **in-tray**.
+
+### `output/` — final deliverables
+
+The `output/` folder is where the agent places finished artefacts — generated scripts, summaries, exports. Keeping outputs separate from inputs means you can always tell what the agent produced versus what you provided.
+
+Think of it as the agent's **out-tray**.
+
+### Why this separation matters
+
+```
+┌─────────────────────────────────────────────────────┐
+│                  Agent workflow                     │
+│                                                     │
+│   data/sales.csv                                    │
+│         │                                           │
+│         │  read_file                                │
+│         ▼                                           │
+│   [ Agent analyses, writes code, runs it ]          │
+│         │                                           │
+│         │  write_file / bash                        │
+│         ▼                                           │
+│   data/analyze_sales.py   ← intermediate working   │
+│   data/sales_report.md    ← intermediate working   │
+│   output/summary.txt      ← final deliverable      │
+└─────────────────────────────────────────────────────┘
+```
+
+This pattern mirrors how real coding agents are used: give them source material, let them reason and iterate, collect the outputs. It also makes it easy to reset — clear `output/` and re-run without touching your source data.
+
+---
+
 ## Key Concepts Summary
 
 | Concept              | What it means                                                        |
