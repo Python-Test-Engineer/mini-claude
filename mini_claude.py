@@ -210,12 +210,14 @@ def resolve_slash_command(user_input):
 
 
 def save_history(history):
-    """Serialize the message history with metadata to output/history.json."""
-    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "history.json")
+    """Serialize the message history with metadata to output/history_<timestamp>.json."""
+    now = datetime.datetime.now(datetime.timezone.utc)
+    timestamp = now.strftime("%Y%m%d_%H%M%S")
+    filename = f"history_{timestamp}.json"
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", filename)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     # Build metadata
-    now = datetime.datetime.now(datetime.timezone.utc)
     user_turns      = sum(1 for m in history if m["role"] == "user"
                           and isinstance(m["content"], str))
     assistant_turns = sum(1 for m in history if m["role"] == "assistant")

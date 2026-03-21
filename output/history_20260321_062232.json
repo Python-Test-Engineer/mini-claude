@@ -1,0 +1,28 @@
+{
+  "metadata": {
+    "session_end": "2026-03-21T06:22:32.957794+00:00",
+    "total_messages": 3,
+    "user_turns": 2,
+    "assistant_turns": 1,
+    "model": "claude-sonnet-4-6"
+  },
+  "messages": [
+    {
+      "role": "user",
+      "content": "hello"
+    },
+    {
+      "role": "assistant",
+      "content": [
+        {
+          "type": "text",
+          "text": "Hello! I'm mini-claude, your terminal-based coding assistant. How can I help you today? Feel free to ask me about any coding tasks, file changes, debugging, or anything else you're working on! 🚀"
+        }
+      ]
+    },
+    {
+      "role": "user",
+      "content": "# List out history of messages\n\n## List all the message history with meta data into a `history_<timestamp>.json` file located in the `output` folder."
+    }
+  ]
+}
