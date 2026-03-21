@@ -1,9 +1,12 @@
 import os
 import sys
+import json
+import datetime
 import subprocess
 import shutil
 import anthropic
 from dotenv import load_dotenv
+from mc_slash_commands import handle_builtin_slash_command
 
 # ANSI color constants
 GREEN  = "\033[92m"
@@ -186,77 +189,6 @@ def get_user_input():
 
 SLASH_COMMANDS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "slash_commands")
 
-# Extra ANSI colors for /hello
-RED     = "\033[91m"
-MAGENTA = "\033[95m"
-BLUE    = "\033[94m"
-
-HELLO_ART = [
-    # Each tuple: (color, line)
-    # H
-    ("RED",     "##   ##  ######  ##      ##      #####  "),
-    ("YELLOW",  "##   ##  ##      ##      ##     ##   ## "),
-    ("GREEN",   "#######  ####    ##      ##     ##   ## "),
-    ("CYAN",    "##   ##  ##      ##      ##     ##   ## "),
-    ("MAGENTA", "##   ##  ######  ######  ######  #####  "),
-]
-
-# Letter-by-letter rows so each letter gets its own color
-_H = [
-    "##   ##",
-    "##   ##",
-    "#######",
-    "##   ##",
-    "##   ##",
-]
-_E = [
-    "######",
-    "##    ",
-    "####  ",
-    "##    ",
-    "######",
-]
-_L = [
-    "##    ",
-    "##    ",
-    "##    ",
-    "##    ",
-    "######",
-]
-_O = [
-    " ##### ",
-    "##   ##",
-    "##   ##",
-    "##   ##",
-    " ##### ",
-]
-
-_LETTERS   = [_H, _E, _L, _L, _O]
-_COLORS    = [RED, YELLOW, GREEN, CYAN, MAGENTA]
-_GAP       = "  "
-
-
-def print_hello_art():
-    """Print a colorful block-letter HELLO using ANSI colors."""
-    print()
-    for row in range(5):
-        line = ""
-        for col, (letter, color) in enumerate(zip(_LETTERS, _COLORS)):
-            line += color + letter[row] + RESET
-            if col < len(_LETTERS) - 1:
-                line += _GAP
-        print("  " + line)
-    print()
-
-
-def handle_builtin_slash_command(user_input):
-    """Handle built-in slash commands that produce direct output.
-    Returns True if the command was handled (skip API call), False otherwise."""
-    if user_input.strip() == "/hello":
-        print_hello_art()
-        return True
-    return False
-
 
 def resolve_slash_command(user_input):
     """If input starts with /command, load slash_commands/command.md and return its contents.
@@ -277,11 +209,40 @@ def resolve_slash_command(user_input):
     return template.replace("$ARGUMENTS", args).strip()
 
 
+def save_history(history):
+    """Serialize the message history with metadata to output/history.json."""
+    output_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "output", "history.json")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    # Build metadata
+    now = datetime.datetime.now(datetime.timezone.utc)
+    user_turns      = sum(1 for m in history if m["role"] == "user"
+                          and isinstance(m["content"], str))
+    assistant_turns = sum(1 for m in history if m["role"] == "assistant")
+
+    payload = {
+        "metadata": {
+            "session_end":      now.isoformat(),
+            "total_messages":   len(history),
+            "user_turns":       user_turns,
+            "assistant_turns":  assistant_turns,
+            "model":            "claude-sonnet-4-6",
+        },
+        "messages": history,
+    }
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False, default=str)
+
+    print(f"\n{GREEN}[history]{RESET} Saved {len(history)} messages → {output_path}")
+
+
 def run_agent_loop(client):
     history = []
     while True:
         user_input = get_user_input()
         if user_input.lower() in ("exit", "quit", ""):
+            save_history(history)
             print("Goodbye.")
             break
 
